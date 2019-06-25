@@ -3,7 +3,7 @@ FROM ${FROM_IMAGE_NAME}
 
 RUN apt-get update && apt-get install -y pbzip2 pv bzip2
 
-RUN pip install toposort networkx pytest nltk tqdm html2text progressbar
+RUN pip install toposort networkx pytest nltk tqdm html2text progressbar onnx numpy
 
 WORKDIR /workspace
 RUN git clone https://github.com/openai/gradient-checkpointing.git

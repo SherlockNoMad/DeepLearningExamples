@@ -4,12 +4,12 @@ INPUT_FILE=${1}
 
 source /workspace/bert/data/bookcorpus/config.sh
 
-OUTPUT_DIR=${WORKING_DIR}/test_set_tfrecords
+OUTPUT_DIR=${WORKING_DIR}/test_set_onnxrecords
 mkdir -p ${OUTPUT_DIR}
 
 #SHARD_INDEX=$(( echo ${INPUT_FILE} | egrep -o [0-9]+ ))
 SHARD_INDEX=$( eval echo ${INPUT_FILE} | sed -e s/[^0-9]//g )
-OUTPUT_FILE="${OUTPUT_DIR}/tf_examples.tfrecord000${SHARD_INDEX}"
+OUTPUT_FILE="${OUTPUT_DIR}/onnx_examples.onnxrecord000${SHARD_INDEX}.pb"
 
 SEED=13254
 

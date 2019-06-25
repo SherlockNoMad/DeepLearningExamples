@@ -5,10 +5,10 @@ INPUT_FILE="${WORKING_DIR}/final_text_files_sharded/bookcorpus.segmented.part.${
 
 source /workspace/bert/data/bookcorpus/config.sh
 
-OUTPUT_DIR=${WORKING_DIR}/final_tfrecords_sharded
+OUTPUT_DIR=${WORKING_DIR}/final_onnxrecords_sharded
 mkdir -p ${OUTPUT_DIR}
 
-OUTPUT_FILE="${OUTPUT_DIR}/tf_examples.tfrecord000${SHARD_INDEX}"
+OUTPUT_FILE="${OUTPUT_DIR}/onnx_examples.onnxrecord000${SHARD_INDEX}.pb"
 
 python /workspace/bert/create_pretraining_data.py \
   --input_file=${INPUT_FILE} \

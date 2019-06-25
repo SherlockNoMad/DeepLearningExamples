@@ -23,6 +23,9 @@ import random
 import tokenization
 import tensorflow as tf
 
+import numpy as np
+from onnx import numpy_helper
+
 flags = tf.flags
 
 FLAGS = flags.FLAGS
@@ -94,7 +97,8 @@ def write_instance_to_example_files(instances, tokenizer, max_seq_length,
   """Create TF example files from `TrainingInstance`s."""
   writers = []
   for output_file in output_files:
-    writers.append(tf.python_io.TFRecordWriter(output_file))
+    file = open(output_file, 'wb')
+    writers.append(file)
 
   writer_index = 0
 
@@ -126,33 +130,37 @@ def write_instance_to_example_files(instances, tokenizer, max_seq_length,
     next_sentence_label = 1 if instance.is_random_next else 0
 
     features = collections.OrderedDict()
-    features["input_ids"] = create_int_feature(input_ids)
-    features["input_mask"] = create_int_feature(input_mask)
-    features["segment_ids"] = create_int_feature(segment_ids)
-    features["masked_lm_positions"] = create_int_feature(masked_lm_positions)
-    features["masked_lm_ids"] = create_int_feature(masked_lm_ids)
-    features["masked_lm_weights"] = create_float_feature(masked_lm_weights)
-    features["next_sentence_labels"] = create_int_feature([next_sentence_label])
+    features["input_ids"] = numpy_helper.from_array(np.asarray(input_ids, dtype=np.int64), "input_ids")
+    features["input_mask"] = numpy_helper.from_array(np.asarray(input_mask, dtype=np.int64), "input_mask")
+    features["segment_ids"] = numpy_helper.from_array(np.asarray(segment_ids, dtype=np.int64), "segment_ids")
+    features["masked_lm_positions"] = numpy_helper.from_array(np.asarray(masked_lm_positions, dtype=np.int64), "masked_lm_positions")
+    features["masked_lm_ids"] = numpy_helper.from_array(np.asarray(masked_lm_ids, dtype=np.int64), "masked_lm_ids")
+    features["masked_lm_weights"] = numpy_helper.from_array(np.asarray(masked_lm_weights, dtype=np.float32), "masked_lm_weights")
+    features["next_sentence_labels"] = numpy_helper.from_array(np.asarray([next_sentence_label], dtype=np.int64), "next_sentence_label")
 
-    tf_example = tf.train.Example(features=tf.train.Features(feature=features))
+    byte_len = 0
+    for feature, tensor in features.items():
+      byte_len += (4 + tensor.ByteSize())
 
-    writers[writer_index].write(tf_example.SerializeToString())
+    writers[writer_index].write(byte_len.to_bytes(4, byteorder='little'))
+
+    for feature, tensor in features.items():
+      tenser_size = tensor.ByteSize()
+      writers[writer_index].write(tenser_size.to_bytes(4, byteorder='little'))
+      writers[writer_index].write(tensor.SerializeToString())
+
     writer_index = (writer_index + 1) % len(writers)
 
     total_written += 1
 
-    if inst_index < 20:
+    if inst_index < 10:
       tf.logging.info("*** Example ***")
       tf.logging.info("tokens: %s" % " ".join(
           [tokenization.printable_text(x) for x in instance.tokens]))
 
       for feature_name in features.keys():
         feature = features[feature_name]
-        values = []
-        if feature.int64_list.value:
-          values = feature.int64_list.value
-        elif feature.float_list.value:
-          values = feature.float_list.value
+        values = numpy_helper.to_array(feature).tolist()
         tf.logging.info(
             "%s: %s" % (feature_name, " ".join([str(x) for x in values])))
 
